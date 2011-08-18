@@ -1,4 +1,5 @@
-﻿using Nancy.Authentication.Facebook.Modules;
+﻿using Nancy.Authentication.Facebook;
+using Nancy.Authentication.Facebook.Modules;
 using Nancy.Authentication.Facebook.Repository;
 using Nancy.Authentication.Forms;
 
@@ -19,7 +20,7 @@ namespace Nancy.Demo.Authentication.Facebook
                         OAthPath = "/OathFacebook"
                     };
 
-            FacebookSecurityModule.Enable(facebookAuthConfiguration);
+            FacebookAuthentication.Enable(facebookAuthConfiguration);
 
             var formsAuthConfiguration =
                 new FormsAuthenticationConfiguration()

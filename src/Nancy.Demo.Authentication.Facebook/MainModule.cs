@@ -1,6 +1,6 @@
 ﻿using Facebook;
+using Nancy.Authentication.Facebook.FacebookExtensions;
 using Nancy.Authentication.Facebook.Repository;
-using Nancy.Authentication.Facebook.SecurityExtensions;
 using Nancy.Security;
 
 namespace Nancy.Demo.Authentication.Facebook
