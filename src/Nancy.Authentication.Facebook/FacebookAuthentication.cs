@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Facebook;
 using Nancy.Authentication.Facebook.Repository;
 using Nancy.Extensions;
@@ -43,6 +44,21 @@ namespace Nancy.Authentication.Facebook
         {
             var url = context.Request.Url;
             return Configuration.BasePath + "/" + url.Path + url.Query;
+        }
+
+        public static Response LogoutAndRedirect(NancyContext context, string path)
+        {
+            if (AuthenticatedUserNameHasValue(context))
+            {
+                var facebookId = long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
+                var accessToken = Configuration.FacebookUserCache.GetAccessToken(facebookId);
+                var expandedPath = Configuration.BasePath + path;
+                return context.GetRedirect(
+                    String.Format("https://www.facebook.com/logout.php?next={0}&access_token={1}", expandedPath,
+                                  accessToken));
+            }
+
+            return null;
         }
 
         public static bool IsOAthResultSuccess(NancyContext context)

@@ -33,12 +33,20 @@ namespace Nancy.Authentication.Facebook.Modules
 
 
                 Get[FacebookAuthentication.Configuration.LogoutPath] = x =>
-                                      {
-                                          //TODO: Logout of facebook and the application
-                                          //Depends on forms authentication 
-                                          return this.LogoutAndRedirect("~/");
+                                                                           {
+                                                                               return
+                                                                                   FacebookAuthentication.
+                                                                                       LogoutAndRedirect(Context, "/logoutApp");
+                                                                           };
 
-                                      };
+
+                Get["/logoutApp"] = x =>
+                                        {
+                                            return this.LogoutAndRedirect("~/");
+                                        };
+
+
+
             }
         }
     }
