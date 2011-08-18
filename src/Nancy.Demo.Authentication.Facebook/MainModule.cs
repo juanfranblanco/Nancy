@@ -15,7 +15,7 @@ namespace Nancy.Demo.Authentication.Facebook
             Get["/"] = parameters =>
                            {
                                var facebookId = long.Parse(Context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
-                               var user = InMemoryUserCache.Get(facebookId);
+                               var user = new InMemoryUserCache().GetUser(facebookId);
                                var client = new FacebookClient(user.AccessToken);
                                dynamic me = client.Get("me");
                                return "<h1>Welcome " + me.name + "</h1><p>You have logged in using facebook</p>";

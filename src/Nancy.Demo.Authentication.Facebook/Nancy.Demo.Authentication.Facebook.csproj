@@ -85,9 +85,10 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="FormsAuthBootstrapper.cs" />
+    <Compile Include="Model\FacebookUser.cs" />
+    <Compile Include="FacebookAuthBootstrapper.cs" />
     <Compile Include="MainModule.cs" />
-    <Compile Include="SecurityModule.cs" />
+    <Compile Include="Repository\InMemoryUserCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

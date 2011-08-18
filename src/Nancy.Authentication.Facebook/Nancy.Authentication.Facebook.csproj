@@ -47,9 +47,10 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AuthorisationPipelines\FacebookAuthenticatedCheckPipeline.cs" />
-    <Compile Include="Model\FacebookUser.cs" />
+    <Compile Include="Modules\FacebookAuthenticationConfiguration.cs" />
     <Compile Include="Modules\FacebookSecurityModule.cs" />
-    <Compile Include="Repository\InMemoryUserCache.cs" />
+    <Compile Include="Repository\IFacebookUserCache.cs" />
+    <Compile Include="Repository\FacebookUserCacheUserNameMapper.cs" />
     <Compile Include="FacebookExtensions\ModuleExtensions.cs" />
   </ItemGroup>
   <ItemGroup />

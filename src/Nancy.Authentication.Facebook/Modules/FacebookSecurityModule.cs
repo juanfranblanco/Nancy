@@ -1,7 +1,5 @@
 ﻿using System;
 using Facebook;
-using Nancy.Authentication.Facebook.Model;
-using Nancy.Authentication.Facebook.Repository;
 using Nancy.Authentication.Forms;
 using Nancy.Extensions;
 using Nancy.Authentication.Forms;
@@ -9,105 +7,105 @@ using Nancy.Authentication.Forms;
 
 namespace Nancy.Authentication.Facebook.Modules
 {
-    public abstract class FacebookSecurityModule:NancyModule
+    public class FacebookSecurityModule:NancyModule
     {
-        public abstract string GetBasePath();
+        public static bool Enabled { get; private set;}
 
-        private static string loginPath = "/login";
-        public static string LoginPath
+        public static void Enable(FacebookAuthenticationConfiguration configuration)
         {
-            get { return loginPath; }
-            set { loginPath = value; }
+            if (configuration == null)
+            {
+                throw new ArgumentNullException("configuration");
+            }
+
+            if(!configuration.IsValid)
+            {
+
+                throw new ArgumentException("Configuration is invalid", "configuration");
+            }
+
+            Enabled = true;
+            Configuration = configuration;
         }
 
-        private static string oAthPath = "/oath";
-        public static string OAthPath
-        {
-            get { return oAthPath; }
-            set { oAthPath = value; }
-        }
-
-        private static string logoutPath = "/logout";
-        public static string LogoutPath
-        {
-            get { return logoutPath; }
-            set { logoutPath = value; }
-        }
+        public static FacebookAuthenticationConfiguration Configuration { get; private set; }
 
 
         public FacebookSecurityModule()
         {
-            Get[LoginPath] = x =>
-                                {
-                                    
-                                    return Context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl().AbsoluteUri);
-                                };
+            if (Enabled)
+            {
+                Get[Configuration.LoginPath] = x =>
+                                     {
 
-            Get[OAthPath] = x =>
-                               {
-                                   string code = Context.Request.Query.code;
-                                   FacebookOAuthResult oauthResult;
-                                   var stringUri = GetRequestUriAbsolutePath();
-                                   
-                                   if (FacebookOAuthResult.TryParse(stringUri, out oauthResult))
-                                   {
-                                       if (oauthResult.IsSuccess)
-                                       {
-                                           //Assign a temporary GUID to identify the user via cookies, we follow Nancy Forms Authentication to prevent storing facebook ids or tokens in cookies.
-                                           var userId = Guid.NewGuid();
-                                           AddAuthenticatedUserToCache(code, userId);
-                                           return this.LoginAndRedirect(userId);
+                                         return Context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl().AbsoluteUri);
+                                     };
 
-                                       }
-                                   }
+                Get[Configuration.OAthPath] = x =>
+                                    {
+                                        string code = Context.Request.Query.code;
+                                        FacebookOAuthResult oauthResult;
+                                        var stringUri = GetRequestUriAbsolutePath();
 
-                                   return this.LogoutAndRedirect("~/");
-                               };
+                                        if (FacebookOAuthResult.TryParse(stringUri, out oauthResult))
+                                        {
+                                            if (oauthResult.IsSuccess)
+                                            {
+                                                //Assign a temporary GUID to identify the user via cookies, we follow Nancy Forms Authentication to prevent storing facebook ids or tokens in cookies.
+                                                //What if I want to store users using the Guid? I would like to get the Guid that match the UserId no?
+                                                var userId = Guid.NewGuid();
+                                                AddAuthenticatedUserToCache(code, userId);
+                                                return this.LoginAndRedirect(userId);
+
+                                            }
+                                        }
+
+                                        return this.LogoutAndRedirect("~/");
+                                    };
 
 
-            Get[LogoutPath] = x =>
-                                 {
-                                     return this.LogoutAndRedirect("~/");
+                Get[Configuration.LogoutPath] = x =>
+                                      {
+                                          //TODO: Logout of facebook and the application
+                                          return this.LogoutAndRedirect("~/");
 
-                                 };
+                                      };
+            }
         }
 
-        public String GetOathRedirectUrl()
-        {
-            return GetBasePath() + OAthPath;
-        }
+       //All Facebook specific stuff could be put somewhere else
 
         private FacebookOAuthClient GetFacebookOAuthClient()
         {
             var oAuthClient = new FacebookOAuthClient(FacebookApplication.Current);
-            oAuthClient.RedirectUri = new Uri(GetOathRedirectUrl());
+            oAuthClient.RedirectUri = new Uri(Configuration.GetOathRedirectUrl());
             return oAuthClient;
         }
 
 
         //The base path is not part the context request.. so this needs to be configured :(.
+        //This should go in a helper
+        //What about 2 / in the url?
         private string GetRequestUriAbsolutePath()
         {
             var url = Context.Request.Url;
-            return GetBasePath() + "/" + url.Path + url.Query;
+            return Configuration.BasePath + "/" + url.Path + url.Query;
+        }
+
+        public string GetAccessToken(string code)
+        {
+            var oAuthClient = GetFacebookOAuthClient();
+            dynamic tokenResult = oAuthClient.ExchangeCodeForAccessToken(code);
+            return tokenResult.access_token;
         }
 
         private void AddAuthenticatedUserToCache(string code, Guid userId)
         {
-            var oAuthClient = GetFacebookOAuthClient();
-            dynamic tokenResult = oAuthClient.ExchangeCodeForAccessToken(code);
-            string accessToken = tokenResult.access_token;
+            string accessToken = GetAccessToken(code);
             var facebookClient = new FacebookClient(accessToken);
             dynamic me = facebookClient.Get("me?fields=id,name");
             long facebookId = Convert.ToInt64(me.id);
-
-            InMemoryUserCache.Add(new FacebookUser
-                                      {
-                                          UserId = userId,
-                                          AccessToken = accessToken,
-                                          FacebookId = facebookId,
-                                          Name = (string)me.name,
-                                      });
+            Configuration.FacebookUserCache.AddUserToCache(userId, facebookId, accessToken, (string) me.name);
         }
 
     }
