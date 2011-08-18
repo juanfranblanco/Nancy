@@ -2,6 +2,7 @@
 using Facebook;
 using Nancy.Authentication.Facebook.Modules;
 using Nancy.Authentication.Facebook.Repository;
+using Nancy.Extensions;
 using Nancy.Security;
 
 namespace Nancy.Authentication.Facebook.AuthorisationPipelines
@@ -29,7 +30,7 @@ namespace Nancy.Authentication.Facebook.AuthorisationPipelines
                 {
                     //If an exception gets thrown the access token is no longer valid
                     RemoveUserFromCache(context, facebookId, facebookUserCache);
-                    return new Response() {StatusCode = HttpStatusCode.Unauthorized};
+                    return context.GetRedirect(FacebookSecurityModule.Configuration.LoginPath);
                 }
             }
             return context.Response;
