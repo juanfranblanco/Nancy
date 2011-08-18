@@ -18,7 +18,7 @@ namespace Nancy.Demo.Authentication.Facebook
                                var user = new InMemoryUserCache().GetUser(facebookId);
                                var client = new FacebookClient(user.AccessToken);
                                dynamic me = client.Get("me");
-                               return "<h1>Welcome " + me.name + "</h1><p>You have logged in using facebook</p>";
+                               return string.Format("<h1>Welcome {0} </h1><p><img src='https://graph.facebook.com/{1}/picture'/>You have logged in using facebook</p>", me.name, me.username);
                            };
 
         }  
