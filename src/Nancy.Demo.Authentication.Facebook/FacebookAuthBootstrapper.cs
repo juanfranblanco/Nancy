@@ -19,7 +19,8 @@ namespace Nancy.Demo.Authentication.Facebook
                         ApplicationAuthenticator = container.Resolve<IApplicationAuthenticator>(),
                         LoginPath = "/LoginFacebook",
                         OAthPath = "/OathFacebook",
-                        ApplicationLogoutPath = "/logoutApp"
+                        ApplicationLogoutPath = "/logoutApp",
+                        ExtendedPermissions =  "user_about_me,publish_stream,offline_access"
                     };
 
             FacebookAuthentication.Enable(facebookAuthConfiguration);

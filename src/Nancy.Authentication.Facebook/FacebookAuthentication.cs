@@ -112,28 +112,35 @@ namespace Nancy.Authentication.Facebook
 
         public static Response RedirectToFacebookLoginUrl(NancyContext context)
         {
-            return context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl().AbsoluteUri);
+            //All the login parameters should be configurable
+            var loginParameters = new Dictionary<string, object>();
+            if (!string.IsNullOrEmpty(Configuration.ExtendedPermissions))
+            {
+                loginParameters["scope"] = Configuration.ExtendedPermissions;
+            }
+
+            return context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl(loginParameters).AbsoluteUri);
         }
 
         public static Response CheckUserIsNothAuthorisedByFacebookAnymore(NancyContext context)
         {
             if (Enabled)
             {
-                var facebookUserCache = Configuration.FacebookUserCache;
                 var facebookId = GetFacebookIdFromContext(context);
+               
                 try
                 {
-
-                    if (facebookId.HasValue)
+                    if (facebookId != null)
                     {
-                        var client = new FacebookClient(facebookUserCache.GetAccessToken(facebookId.Value));
+                        var client = GetFacebookClient(context);
                         dynamic me = client.Get("me");
                     }
+
                 }
                 catch (FacebookOAuthException)
                 {
                     //If an exception gets thrown the access token is no longer valid
-                    RemoveUserFromCache(context, facebookId, facebookUserCache);
+                    RemoveUserFromCache(context, facebookId);
                     return context.GetRedirect(Configuration.LoginPath);
                 }
             }
@@ -141,10 +148,10 @@ namespace Nancy.Authentication.Facebook
 
         }
 
-        private static void RemoveUserFromCache(NancyContext context, long? facebookId, IFacebookUserCache facebookUserCache)
+        private static void RemoveUserFromCache(NancyContext context, long? facebookId)
         {
             context.Items[SecurityConventions.AuthenticatedUsernameKey] = null;
-            if (facebookId.HasValue) facebookUserCache.RemoveUserFromCache(facebookId.Value);
+            if (facebookId.HasValue) FacebookUserCache.RemoveUserFromCache(facebookId.Value);
         }
 
         private static bool AuthenticatedUserNameHasValue(NancyContext context)
@@ -152,5 +159,20 @@ namespace Nancy.Authentication.Facebook
             return context.Items.ContainsKey(SecurityConventions.AuthenticatedUsernameKey) && context.Items[SecurityConventions.AuthenticatedUsernameKey] != null && context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString() != String.Empty;
         }
 
+        public static FacebookClient GetFacebookClient(NancyContext context)
+        {
+            var facebookId = GetFacebookIdFromContext(context);
+            return GetFacebookClient(facebookId);
+        }
+
+        public static FacebookClient GetFacebookClient(long? facebookId)
+        {
+            if (facebookId.HasValue)
+            {
+                return new FacebookClient(FacebookUserCache.GetAccessToken(facebookId.Value));
+            }
+
+            return null;
+        }
     }
 }

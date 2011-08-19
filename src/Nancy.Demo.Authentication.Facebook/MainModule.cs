@@ -1,4 +1,6 @@
-﻿using Facebook;
+﻿using System.Collections.Generic;
+using System.Dynamic;
+using Facebook;
 using Nancy.Authentication.Facebook;
 using Nancy.Authentication.Facebook.FacebookExtensions;
 using Nancy.Authentication.Facebook.Repository;
@@ -15,14 +17,20 @@ namespace Nancy.Demo.Authentication.Facebook
 
             Get["/"] = parameters =>
                            {
-
-                               var facebookId = FacebookAuthentication.GetFacebookIdFromContext(Context);
-                               var user = new InMemoryUserCache().GetUser(facebookId.Value);
-                               var client = new FacebookClient(user.AccessToken);
+                               var client = FacebookAuthentication.GetFacebookClient(Context);
                                dynamic me = client.Get("me");
-                               return string.Format("<h1>Welcome {0} </h1><p><img src='https://graph.facebook.com/{1}/picture'/>You have logged in using facebook</p>", me.name, me.username);
+                               return View["index", me];
                            };
 
-        }  
+            Post["/"] = x =>
+                            {
+                                var client = FacebookAuthentication.GetFacebookClient(Context);
+                                dynamic parameters = new ExpandoObject();
+                                parameters.message = (string)this.Request.Form.Message;
+                                client.Post("me/feed", parameters);
+                                return Response.AsRedirect("/");
+                            };
+
+        } 
     }
 }

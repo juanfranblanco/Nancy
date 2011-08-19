@@ -16,6 +16,11 @@ namespace Nancy.Authentication.Facebook
 
         public IFacebookUserCache FacebookUserCache { get; set; }
         public IApplicationAuthenticator ApplicationAuthenticator { get; set; }
+        
+        /// <summary>
+        /// Comma delimited set of permissions
+        /// </summary>
+        public string ExtendedPermissions { get; set; }
 
         private string basePath;
 
