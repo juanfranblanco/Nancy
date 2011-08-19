@@ -42,6 +42,14 @@ namespace Nancy.Authentication.Facebook
             return oAuthClient;
         }
 
+        /// <summary>
+        /// Uses the configured application authenticator to login and redirect
+        /// </summary>
+        public static Response LoginAndRedirect(NancyContext context, long facebookId)
+        {
+            return Configuration.ApplicationAuthenticator.UserLoggedInRedirectResponse(context, facebookId);
+        }
+
         public static Response LogoutAndRedirect(NancyContext context, string path)
         {
             var facebookId = GetFacebookIdFromContext(context);
@@ -86,13 +94,20 @@ namespace Nancy.Authentication.Facebook
             return tokenResult.access_token;
         }
 
-        public static void AddAuthenticatedUserToCache(string code, Guid userId)
+        //hmmm 2 functions? return the facebookId and add to cache..
+        /// <summary>
+        /// Retrieves and adds an authenticated user to the cache, using the authorisation code provided by facebook
+        /// </summary>
+        /// <param name="code">Authorisation code provided by facebook</param>
+        /// <returns>The facebook id of the user</returns>
+        public static long RetrieveAndAddAuthenticatedUserToCache(string code)
         {
             string accessToken = GetAccessToken(code);
             var facebookClient = new FacebookClient(accessToken);
             dynamic me = facebookClient.Get("me");
             long facebookId = Convert.ToInt64(me.id);
-            FacebookUserCache.AddUserToCache(userId, facebookId, accessToken, (string)me.name);
+            FacebookUserCache.AddUserToCache(facebookId, accessToken, (string)me.name);
+            return facebookId;
         }
 
         public static Response RedirectToFacebookLoginUrl(NancyContext context)

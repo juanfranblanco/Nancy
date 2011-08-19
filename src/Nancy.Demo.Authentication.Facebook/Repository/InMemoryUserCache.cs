@@ -18,11 +18,10 @@ namespace Nancy.Demo.Authentication.Facebook
             users[user.FacebookId] = user;
         }
 
-        public void AddUserToCache(Guid userId, long facebookId, string accessToken, string name)
+        public void AddUserToCache(long facebookId, string accessToken, string name)
         {
             AddUserToCache(new FacebookUser
             {
-                UserId = userId,
                 AccessToken = accessToken,
                 FacebookId = facebookId,
                 Name = name
@@ -36,7 +35,6 @@ namespace Nancy.Demo.Authentication.Facebook
             {
                 return usersFound.First().Value.FacebookId;
             }
-
             return null;
         }
 

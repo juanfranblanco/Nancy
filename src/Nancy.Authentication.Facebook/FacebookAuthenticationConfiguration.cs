@@ -1,4 +1,5 @@
 ﻿using System;
+using Nancy.Authentication.Facebook.Modules;
 using Nancy.Authentication.Facebook.Repository;
 
 namespace Nancy.Authentication.Facebook
@@ -14,6 +15,7 @@ namespace Nancy.Authentication.Facebook
         private const string FACEBOOK_LOG_OUT_URL_FORMAT = "https://www.facebook.com/logout.php?next={0}&access_token={1}";
 
         public IFacebookUserCache FacebookUserCache { get; set; }
+        public IApplicationAuthenticator ApplicationAuthenticator { get; set; }
 
         private string basePath;
 
@@ -33,14 +35,14 @@ namespace Nancy.Authentication.Facebook
 
         public string LoginPath { get; set; }
         public string OAthPath { get; set; }
-        public string LogoutPath { get; set; }
-      
+        public string FacebookLogoutPath { get; set; }
+        public string ApplicationLogoutPath { get; set; }
 
         public FacebookAuthenticationConfiguration()
         {
             LoginPath = LOGIN_PATH;
             OAthPath = O_ATH_PATH;
-            LogoutPath = FACEBOOK_LOGOUT_PATH;
+            FacebookLogoutPath = FACEBOOK_LOGOUT_PATH;
         }
 
         public string GetOathAbsoluteUrl()
@@ -94,12 +96,22 @@ namespace Nancy.Authentication.Facebook
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(this.LogoutPath))
+                if (string.IsNullOrEmpty(this.FacebookLogoutPath))
+                {
+                    return false;
+                }
+
+                if(string.IsNullOrEmpty(this.ApplicationLogoutPath))
                 {
                     return false;
                 }
 
                 if (FacebookUserCache == null)
+                {
+                    return false;
+                }
+
+                if (ApplicationAuthenticator == null)
                 {
                     return false;
                 }

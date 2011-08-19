@@ -6,6 +6,7 @@ using Nancy.Authentication.Forms;
 
 namespace Nancy.Authentication.Facebook.Repository
 {
+
     public class FacebookUserCacheUserNameMapper:IUsernameMapper
     {
         private IFacebookUserCache facebookUserCache;

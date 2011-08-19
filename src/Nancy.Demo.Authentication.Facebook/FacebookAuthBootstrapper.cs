@@ -16,8 +16,10 @@ namespace Nancy.Demo.Authentication.Facebook
                     {
                         BasePath = "http://localhost:81",
                         FacebookUserCache = container.Resolve<IFacebookUserCache>(),
+                        ApplicationAuthenticator = container.Resolve<IApplicationAuthenticator>(),
                         LoginPath = "/LoginFacebook",
-                        OAthPath = "/OathFacebook"
+                        OAthPath = "/OathFacebook",
+                        ApplicationLogoutPath = "/logoutApp"
                     };
 
             FacebookAuthentication.Enable(facebookAuthConfiguration);

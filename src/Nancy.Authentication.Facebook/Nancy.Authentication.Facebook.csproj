@@ -48,8 +48,8 @@
     </Compile>
     <Compile Include="FacebookAuthentication.cs" />
     <Compile Include="FacebookAuthenticationConfiguration.cs" />
-    <Compile Include="Helpers\GuidEncoder.cs" />
     <Compile Include="Modules\FacebookSecurityModule.cs" />
+    <Compile Include="IApplicationAuthenticator.cs" />
     <Compile Include="Repository\IFacebookUserCache.cs" />
     <Compile Include="Repository\FacebookUserCacheUserNameMapper.cs" />
     <Compile Include="FacebookExtensions\ModuleExtensions.cs" />
