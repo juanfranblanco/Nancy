@@ -11,6 +11,13 @@ namespace Nancy.Authentication.Facebook
     {
         public static bool Enabled { get; private set; }
 
+        public static FacebookAuthenticationConfiguration Configuration { get; private set; }
+
+        public static IFacebookUserCache FacebookUserCache
+        {
+            get { return Configuration != null ? Configuration.FacebookUserCache : null; }
+        }
+
         public static void Enable(FacebookAuthenticationConfiguration configuration)
         {
             if (configuration == null)
@@ -28,44 +35,40 @@ namespace Nancy.Authentication.Facebook
             Configuration = configuration;
         }
 
-        public static FacebookAuthenticationConfiguration Configuration { get; private set; }
-
         public static FacebookOAuthClient GetFacebookOAuthClient()
         {
             var oAuthClient = new FacebookOAuthClient(FacebookApplication.Current);
-            oAuthClient.RedirectUri = new Uri(Configuration.GetOathRedirectUrl());
+            oAuthClient.RedirectUri = new Uri(Configuration.GetOathAbsoluteUrl());
             return oAuthClient;
-        }
-
-        //The base path is not part the context request.. so this needs to be configured :(.
-        //This should go in a helper
-        //What about 2 / in the url?
-        private static string GetRequestUriAbsolutePath(NancyContext context)
-        {
-            var url = context.Request.Url;
-            return Configuration.BasePath + "/" + url.Path + url.Query;
         }
 
         public static Response LogoutAndRedirect(NancyContext context, string path)
         {
-            if (AuthenticatedUserNameHasValue(context))
+            var facebookId = GetFacebookIdFromContext(context);
+
+            if (facebookId.HasValue)
             {
-                var facebookId = long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
-                var accessToken = Configuration.FacebookUserCache.GetAccessToken(facebookId);
-                var expandedPath = Configuration.BasePath + path;
-                return context.GetRedirect(
-                    String.Format("https://www.facebook.com/logout.php?next={0}&access_token={1}", expandedPath,
-                                  accessToken));
+                var accessToken = FacebookUserCache.GetAccessToken(facebookId.Value);
+                //This method of login out comes from http://forum.developers.facebook.net/viewtopic.php?id=87109 it seems to be an issue with login out.
+                return context.GetRedirect(Configuration.GetFacebookLogoutUrl(path, accessToken));
             }
 
+            return null;
+        }
+
+        public static long? GetFacebookIdFromContext(NancyContext context)
+        {
+            if (AuthenticatedUserNameHasValue(context))
+            {
+                return long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
+            }
             return null;
         }
 
         public static bool IsOAthResultSuccess(NancyContext context)
         {
             FacebookOAuthResult oauthResult;
-            var stringUri = GetRequestUriAbsolutePath(context);
-
+            var stringUri = Configuration.GetRequestAbsoluteUrl(context);
             if (FacebookOAuthResult.TryParse(stringUri, out oauthResult))
             {
                 if (oauthResult.IsSuccess)
@@ -87,30 +90,27 @@ namespace Nancy.Authentication.Facebook
         {
             string accessToken = GetAccessToken(code);
             var facebookClient = new FacebookClient(accessToken);
-            dynamic me = facebookClient.Get("me?fields=id,name");
+            dynamic me = facebookClient.Get("me");
             long facebookId = Convert.ToInt64(me.id);
-            Configuration.FacebookUserCache.AddUserToCache(userId, facebookId, accessToken, (string)me.name);
+            FacebookUserCache.AddUserToCache(userId, facebookId, accessToken, (string)me.name);
         }
 
-        public static Response RedirectToFaceobookLoginUrl(NancyContext context)
+        public static Response RedirectToFacebookLoginUrl(NancyContext context)
         {
             return context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl().AbsoluteUri);
         }
-
 
         public static Response CheckUserIsNothAuthorisedByFacebookAnymore(NancyContext context)
         {
             if (Enabled)
             {
                 var facebookUserCache = Configuration.FacebookUserCache;
-
-                long? facebookId = null;
+                var facebookId = GetFacebookIdFromContext(context);
                 try
                 {
 
-                    if (AuthenticatedUserNameHasValue(context))
+                    if (facebookId.HasValue)
                     {
-                        facebookId = long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
                         var client = new FacebookClient(facebookUserCache.GetAccessToken(facebookId.Value));
                         dynamic me = client.Get("me");
                     }

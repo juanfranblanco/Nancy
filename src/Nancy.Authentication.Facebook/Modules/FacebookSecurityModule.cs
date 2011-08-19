@@ -1,5 +1,7 @@
 ﻿using System;
+using Nancy.Authentication.Facebook.Helpers;
 using Nancy.Authentication.Forms;
+using Nancy.Extensions;
 
 namespace Nancy.Authentication.Facebook.Modules
 {
@@ -13,38 +15,42 @@ namespace Nancy.Authentication.Facebook.Modules
                 Get[FacebookAuthentication.Configuration.LoginPath] = x =>
                                      {
 
-                                         return FacebookAuthentication.RedirectToFaceobookLoginUrl(Context);
+                                         return FacebookAuthentication.RedirectToFacebookLoginUrl(Context);
                                      };
 
                 Get[FacebookAuthentication.Configuration.OAthPath] = x =>
                                     {
                                         string code = Context.Request.Query.code;
-                                        if(FacebookAuthentication.IsOAthResultSuccess(Context))
+                                        if (FacebookAuthentication.IsOAthResultSuccess(Context))
                                         {
-                                                //Assign a temporary GUID to identify the user via cookies, we follow Nancy Forms Authentication to prevent storing facebook ids or tokens in cookies.
-                                                //What if I want to store users using the Guid? I would like to get the Guid that match the UserId no?
-                                                var userId = Guid.NewGuid();
-                                                FacebookAuthentication.AddAuthenticatedUserToCache(code, userId);
-                                                return this.LoginAndRedirect(userId);
+                                            //Assign a temporary GUID to identify the user, the application login can check the database or whatever store if necessary
+                                            //for the facebookId and align guids
+                                            var temporaryUserId = Guid.NewGuid();
+                                            FacebookAuthentication.AddAuthenticatedUserToCache(code, temporaryUserId);
+                                            //Doing a redirect to the application login, this way we remove coupling with any application internal storage authentication (ie Forms cookie store).
+                                            //Problem is that we have to pass the guid and redirect.. maybe a configurable interface will be better
+                                            return Context.GetRedirect("/loginAppAfterFacebookOAth/" + GuidEncoder.Encode(temporaryUserId));
+                                            //return this.LoginAndRedirect(userId);
                                         }
-                                        //Depends on forms Authentication it would be nice remove the dependency
-                                        return this.LogoutAndRedirect("~/");
+                                        //This should be configurable...  Logout of App (redirect to Application Logout)
+                                        return Context.GetRedirect("/logoutApp");
+                                        //return this.LogoutAndRedirect("~/");
                                     };
 
 
                 Get[FacebookAuthentication.Configuration.LogoutPath] = x =>
                                                                            {
+                                                                               //Logout of facebook and then redirection to logout of the app.
+                                                                              //Note: this should be configurable.
+                                                                              //this way remove coupling of any application authentication storage provider (ie the Forms cookies:)).
+                                                                              //Even if we wanted to use a configurable interface to the pre-logout of the app when using forms cookies there was not easy way to clear the authentication so this seems a good option.
+                                 
                                                                                return
                                                                                    FacebookAuthentication.
                                                                                        LogoutAndRedirect(Context, "/logoutApp");
                                                                            };
 
-
-                Get["/logoutApp"] = x =>
-                                        {
-                                            return this.LogoutAndRedirect("~/");
-                                        };
-
+                
 
 
             }

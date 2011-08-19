@@ -85,6 +85,7 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="FormsAuthenticationModule.cs" />
     <Compile Include="Model\FacebookUser.cs" />
     <Compile Include="FacebookAuthBootstrapper.cs" />
     <Compile Include="MainModule.cs" />
