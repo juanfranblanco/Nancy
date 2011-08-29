@@ -151,8 +151,8 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="FormsAuthenticationConfigurationFixture.cs" />
-    <Compile Include="FormsAuthenticationFixture.cs" />
+    <Compile Include="FacebookAuthenticationConfigurationFixture.cs" />
+    <Compile Include="FacebookUrlHelperFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nancy.Authentication.Facebook\Nancy.Authentication.Facebook.csproj">

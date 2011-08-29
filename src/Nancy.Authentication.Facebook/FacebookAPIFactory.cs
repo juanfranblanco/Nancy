@@ -2,7 +2,7 @@
 
 namespace Nancy.Authentication.Facebook
 {
-    public class FacebookSDKObjectBuilder : IFacebookSDKObjectBuilder
+    public class FacebookAPIFactory : IFacebookAPIFactory
     {
         /// <summary>
         /// Creates a new Facebook Client using the user accessCode

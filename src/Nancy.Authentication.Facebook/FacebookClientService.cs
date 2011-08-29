@@ -8,17 +8,17 @@ namespace Nancy.Authentication.Facebook
     {
         private readonly IApplicationAuthenticator applicationAuthenticator;
         private readonly IFacebookCurrentAuthenticatedUserCache facebookCurrentAuthenticatedUserCache;
-        private readonly IFacebookSDKObjectBuilder facebookSDKObjectBuilder;
+        private readonly IFacebookAPIFactory facebookAPIFactory;
 
-        public FacebookClientService(IApplicationAuthenticator applicationAuthenticator, IFacebookCurrentAuthenticatedUserCache facebookCurrentAuthenticatedUserCache, IFacebookSDKObjectBuilder facebookSDKObjectBuilder)
+        public FacebookClientService(IApplicationAuthenticator applicationAuthenticator, IFacebookCurrentAuthenticatedUserCache facebookCurrentAuthenticatedUserCache, IFacebookAPIFactory facebookAPIFactory)
         {
             if (applicationAuthenticator == null) throw new ArgumentNullException("applicationAuthenticator");
             if (facebookCurrentAuthenticatedUserCache == null) throw new ArgumentNullException("facebookCurrentAuthenticatedUserCache");
-            if (facebookSDKObjectBuilder == null) throw new ArgumentNullException("facebookSDKObjectBuilder");
+            if (facebookAPIFactory == null) throw new ArgumentNullException("facebookAPIFactory");
 
             this.applicationAuthenticator = applicationAuthenticator;
             this.facebookCurrentAuthenticatedUserCache = facebookCurrentAuthenticatedUserCache;
-            this.facebookSDKObjectBuilder = facebookSDKObjectBuilder;
+            this.facebookAPIFactory = facebookAPIFactory;
         }
 
         public  FacebookClient GetFacebookClient(NancyContext context)
@@ -32,7 +32,7 @@ namespace Nancy.Authentication.Facebook
             if (facebookId.HasValue)
             {
                 var accessToken = facebookCurrentAuthenticatedUserCache.GetAccessToken(facebookId.Value);
-                return facebookSDKObjectBuilder.CreateNewFacebookClient(accessToken);
+                return facebookAPIFactory.CreateNewFacebookClient(accessToken);
             }
 
             return null;
@@ -40,7 +40,7 @@ namespace Nancy.Authentication.Facebook
 
         public dynamic GetFacebookMe(string accessToken)
         {
-            var facebookClient = facebookSDKObjectBuilder.CreateNewFacebookClient(accessToken);
+            var facebookClient = facebookAPIFactory.CreateNewFacebookClient(accessToken);
             return facebookClient.Get("me");
         }
 

@@ -50,10 +50,10 @@
     <Compile Include="FacebookAuthenticationConfiguration.cs" />
     <Compile Include="FacebookClientService.cs" />
     <Compile Include="FacebookOAuthService.cs" />
-    <Compile Include="FacebookSDKObjectBuilder.cs" />
+    <Compile Include="FacebookAPIFactory.cs" />
     <Compile Include="FacebookUrlHelper.cs" />
     <Compile Include="FormsApplicationAuthentication\FormsApplicationAuthenticator.cs" />
-    <Compile Include="IFacebookSDKObjectBuilder.cs" />
+    <Compile Include="IFacebookAPIFactory.cs" />
     <Compile Include="IFacebookUrlHelper.cs" />
     <Compile Include="Modules\FacebookSecurityModule.cs" />
     <Compile Include="IApplicationAuthenticator.cs" />

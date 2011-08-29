@@ -51,7 +51,7 @@ namespace Nancy.Authentication.Facebook
         /// </param>
         public static void Enable(FacebookAuthenticationConfiguration configuration)
         {
-            Enable(configuration, new FacebookSDKObjectBuilder(), new FacebookUrlHelper(configuration));
+            Enable(configuration, new FacebookAPIFactory(), new FacebookUrlHelper(configuration));
         }
 
         /// <summary>
@@ -60,13 +60,13 @@ namespace Nancy.Authentication.Facebook
         /// <param name="configuration">
         /// The facebook authentication configuration
         /// </param>
-        /// <param name="facebookSdkObjectBuilder">
+        /// <param name="facebookAPIFactory">
         /// The facebook object builder
         /// </param>
         /// <param name="facebookUrlHelper">
         /// The facebook url helper
         /// </param>
-        public static void Enable(FacebookAuthenticationConfiguration configuration, IFacebookSDKObjectBuilder facebookSdkObjectBuilder, IFacebookUrlHelper facebookUrlHelper)
+        public static void Enable(FacebookAuthenticationConfiguration configuration, IFacebookAPIFactory facebookAPIFactory, IFacebookUrlHelper facebookUrlHelper)
         {
 
             if (configuration == null)
@@ -80,9 +80,9 @@ namespace Nancy.Authentication.Facebook
             }
 
 
-            if (facebookSdkObjectBuilder == null)
+            if (facebookAPIFactory == null)
             {
-                throw new ArgumentNullException("facebookSdkObjectBuilder");
+                throw new ArgumentNullException("facebookAPIFactory");
             }
 
             if (facebookUrlHelper == null)
@@ -92,8 +92,8 @@ namespace Nancy.Authentication.Facebook
 
             Enabled = true;
             Configuration = configuration;
-            FacebookClientService = new FacebookClientService(ApplicationAuthenticator, FacebookCurrentAuthenticatedUserCache, facebookSdkObjectBuilder);
-            FacebookOAuthService = new FacebookOAuthService(facebookSdkObjectBuilder, facebookUrlHelper);
+            FacebookClientService = new FacebookClientService(ApplicationAuthenticator, FacebookCurrentAuthenticatedUserCache, facebookAPIFactory);
+            FacebookOAuthService = new FacebookOAuthService(facebookAPIFactory, facebookUrlHelper);
             
         }
 

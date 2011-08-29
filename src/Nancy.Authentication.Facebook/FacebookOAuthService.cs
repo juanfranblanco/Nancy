@@ -6,7 +6,7 @@ namespace Nancy.Authentication.Facebook
 {
     public class FacebookOAuthService
     {
-        private readonly IFacebookSDKObjectBuilder facebookSDKObjectBuilder;
+        private readonly IFacebookAPIFactory facebookAPIFactory;
         private readonly IFacebookUrlHelper facebookUrlHelper;
 
         /// <summary>
@@ -14,18 +14,18 @@ namespace Nancy.Authentication.Facebook
         /// </summary>
         public const string FACEBOOK_LOG_OUT_URL_FORMAT = "https://www.facebook.com/logout.php?next={0}&access_token={1}";
 
-        public FacebookOAuthService(IFacebookSDKObjectBuilder facebookSDKObjectBuilder, IFacebookUrlHelper facebookUrlHelper)
+        public FacebookOAuthService(IFacebookAPIFactory facebookAPIFactory, IFacebookUrlHelper facebookUrlHelper)
         {
-            if (facebookSDKObjectBuilder == null) throw new ArgumentNullException("facebookSDKObjectBuilder");
+            if (facebookAPIFactory == null) throw new ArgumentNullException("facebookAPIFactory");
             if (facebookUrlHelper == null) throw new ArgumentNullException("facebookUrlHelper");
 
-            this.facebookSDKObjectBuilder = facebookSDKObjectBuilder;
+            this.facebookAPIFactory = facebookAPIFactory;
             this.facebookUrlHelper = facebookUrlHelper;
         }
 
         public FacebookOAuthClient GetFacebookOAuthClient()
         {
-            var oAuthClient = facebookSDKObjectBuilder.CreateNewFacebookOAuthClient();
+            var oAuthClient = facebookAPIFactory.CreateNewFacebookOAuthClient();
             oAuthClient.RedirectUri = new Uri(facebookUrlHelper.GetOathAbsoluteUrl());
             return oAuthClient;
         }

@@ -51,6 +51,7 @@ namespace Nancy.Authentication.Facebook
             {
                 if (String.IsNullOrEmpty(value))
                 {
+                    this.applicationBasePath = String.Empty;
                     return;
                 }
 

@@ -47,7 +47,7 @@ namespace Nancy.Authentication.Facebook.Tests
 
 
         [Fact]
-        public void Should_not_be_valid_with_empty_base_path()
+        public void Should_not_be_valid_with_empty_application_base_path()
         {
             config.ApplicationBasePath = "";
 
@@ -108,6 +108,15 @@ namespace Nancy.Authentication.Facebook.Tests
             result.ShouldBeFalse();
         }
 
-       
+        [Fact] public void Should_return_the_application_base_path_without_the_last_forward_slash()
+        {
+            config.ApplicationBasePath = "http://127.0.0.1/";
+            config.ApplicationBasePath.ShouldEqual("http://127.0.0.1");
+        }
+
+
+
+
+
     }
 }
