@@ -14,13 +14,13 @@ namespace Nancy.Demo.Authentication.Facebook
             var facebookAuthConfiguration =
                 new FacebookAuthenticationConfiguration()
                     {
-                        BasePath = "http://localhost:81",
-                        FacebookUserCache = container.Resolve<IFacebookUserCache>(),
+                        ApplicationBasePath = "http://localhost:81",
+                        FacebookCurrentAuthenticatedUserCache = container.Resolve<IFacebookCurrentAuthenticatedUserCache>(),
                         ApplicationAuthenticator = container.Resolve<IApplicationAuthenticator>(),
-                        LoginPath = "/LoginFacebook",
-                        OAthPath = "/OathFacebook",
+                        FacebookLoginPath = "/LoginFacebook",
+                        FacebookOAthResponsePath = "/OathFacebook",
                         ApplicationLogoutPath = "/logoutApp",
-                        ExtendedPermissions =  "user_about_me,publish_stream,offline_access"
+                        FacebookExtendedPermissions =  "user_about_me,publish_stream,offline_access"
                     };
 
             FacebookAuthentication.Enable(facebookAuthConfiguration);
@@ -28,7 +28,7 @@ namespace Nancy.Demo.Authentication.Facebook
             var formsAuthConfiguration =
                 new FormsAuthenticationConfiguration()
                     {
-                        RedirectUrl = facebookAuthConfiguration.LoginPath,
+                        RedirectUrl = facebookAuthConfiguration.FacebookLoginPath,
                         UsernameMapper = container.Resolve<IUsernameMapper>(),
                     };
 

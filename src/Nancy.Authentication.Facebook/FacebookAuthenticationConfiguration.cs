@@ -12,21 +12,41 @@ namespace Nancy.Authentication.Facebook
         private const string LOGIN_PATH = "/login";
         private const string O_ATH_PATH = "/oath";
         private const string FACEBOOK_LOGOUT_PATH = "/logout";
-        private const string FACEBOOK_LOG_OUT_URL_FORMAT = "https://www.facebook.com/logout.php?next={0}&access_token={1}";
 
-        public IFacebookUserCache FacebookUserCache { get; set; }
+       
+
+        /// <summary>
+        /// The facebook user cache, to store and retrieve current authenticated users
+        /// </summary>
+        public IFacebookCurrentAuthenticatedUserCache FacebookCurrentAuthenticatedUserCache { get; set; }
+
+        /// <summary>
+        /// The Application Authenticator, to authenticate users in the current application after a successful login into facebook
+        /// </summary>
         public IApplicationAuthenticator ApplicationAuthenticator { get; set; }
         
         /// <summary>
-        /// Comma delimited set of permissions
+        /// Comma delimited set of facebook extended permissions, to allow the usage of specific features.
+        /// For a full list look at: http://developers.facebook.com/docs/reference/api/permissions/
         /// </summary>
-        public string ExtendedPermissions { get; set; }
+        /// <example>
+        ///  user_about_me,publish_stream,offline_access
+        /// </example>
+        /// <remarks>
+        /// This is not a required field.
+        /// </remarks>
+        public string FacebookExtendedPermissions { get; set; }
 
-        private string basePath;
-
-        public string BasePath
+        private string applicationBasePath;
+        /// <summary>
+        /// The application base path
+        /// </summary>
+        /// <example>
+        /// http://localhost/
+        /// </example>
+        public string ApplicationBasePath
         {
-            get { return this.basePath; }
+            get { return this.applicationBasePath; }
             set
             {
                 if (String.IsNullOrEmpty(value))
@@ -34,49 +54,39 @@ namespace Nancy.Authentication.Facebook
                     return;
                 }
 
-                this.basePath = value.TrimEnd('/');
+                this.applicationBasePath = value.TrimEnd('/');
             }
         }
+        
+        /// <summary>
+        /// The path to the module that will start the facebook authentication
+        /// <see cref="Nancy.Authentication.Facebook.Modules.FacebookSecurityModule" />
+        /// </summary>
+        public string FacebookLoginPath { get; set; }
 
-        public string LoginPath { get; set; }
-        public string OAthPath { get; set; }
+        /// <summary>
+        /// The path to the module that will get the oath response of the facebook authentication
+        /// <see cref="Nancy.Authentication.Facebook.Modules.FacebookSecurityModule" />
+        /// </summary>
+        public string FacebookOAthResponsePath { get; set; }
+
+        /// <summary>
+        /// The path to the module that will start the facebook logout
+        /// <see cref="Nancy.Authentication.Facebook.Modules.FacebookSecurityModule" />
+        /// </summary>
         public string FacebookLogoutPath { get; set; }
+
+        /// <summary>
+        /// The path to the module that will start the logout of the application after the successful logout of facebook
+        /// <see cref="Nancy.Authentication.Facebook.Modules.FacebookSecurityModule" />
+        /// </summary>
         public string ApplicationLogoutPath { get; set; }
 
         public FacebookAuthenticationConfiguration()
         {
-            LoginPath = LOGIN_PATH;
-            OAthPath = O_ATH_PATH;
+            FacebookLoginPath = LOGIN_PATH;
+            FacebookOAthResponsePath = O_ATH_PATH;
             FacebookLogoutPath = FACEBOOK_LOGOUT_PATH;
-        }
-
-        public string GetOathAbsoluteUrl()
-        {
-            return BasePath + OAthPath;
-        }
-
-        private string ExpandPath(string path)
-        {
-            return BasePath + path;
-        }
-
-        private string ExpandPath(string path, string query)
-        {
-            return ExpandPath(path) + query;
-        }
-
-        public string GetRequestAbsoluteUrl(NancyContext context)
-        {
-            var url = context.Request.Url;
-            return ExpandPath(url.Path, url.Query);
-        }
-
-        public string GetFacebookLogoutUrl(string redirectPath, string accessToken)
-        {
-            return
-                string.Format(FACEBOOK_LOG_OUT_URL_FORMAT,
-                                            ExpandPath(redirectPath),
-                                            accessToken);
         }
 
         /// <summary>
@@ -86,17 +96,17 @@ namespace Nancy.Authentication.Facebook
         {
             get
             {
-                if (string.IsNullOrEmpty(this.BasePath))
+                if (string.IsNullOrEmpty(this.ApplicationBasePath))
                 {
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(this.OAthPath))
+                if (string.IsNullOrEmpty(this.FacebookOAthResponsePath))
                 {
                     return false;
                 }
 
-                if (string.IsNullOrEmpty(this.LoginPath))
+                if (string.IsNullOrEmpty(this.FacebookLoginPath))
                 {
                     return false;
                 }
@@ -111,7 +121,7 @@ namespace Nancy.Authentication.Facebook
                     return false;
                 }
 
-                if (FacebookUserCache == null)
+                if (FacebookCurrentAuthenticatedUserCache == null)
                 {
                     return false;
                 }

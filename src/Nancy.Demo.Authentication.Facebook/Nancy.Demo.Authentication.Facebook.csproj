@@ -96,7 +96,7 @@
     <Compile Include="Model\FacebookUser.cs" />
     <Compile Include="FacebookAuthBootstrapper.cs" />
     <Compile Include="MainModule.cs" />
-    <Compile Include="Repository\InMemoryUserCache.cs" />
+    <Compile Include="Repository\InMemoryCurrentAuthenticatedUserCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

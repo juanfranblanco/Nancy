@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Facebook;
 using Nancy.Authentication.Facebook.Repository;
 using Nancy.Extensions;
@@ -9,17 +8,67 @@ namespace Nancy.Authentication.Facebook
 {
     public class FacebookAuthentication
     {
+        /// <summary>
+        /// Returns if the facebook authentication is enabled
+        /// </summary>
         public static bool Enabled { get; private set; }
 
+        /// <summary>
+        /// Returns the facebook authentication configuration
+        /// </summary>
         public static FacebookAuthenticationConfiguration Configuration { get; private set; }
 
-        public static IFacebookUserCache FacebookUserCache
+        /// <summary>
+        /// Returns the configured facebook user cache
+        /// </summary>
+        public static IFacebookCurrentAuthenticatedUserCache FacebookCurrentAuthenticatedUserCache
         {
-            get { return Configuration != null ? Configuration.FacebookUserCache : null; }
+            get { return Configuration != null ? Configuration.FacebookCurrentAuthenticatedUserCache : null; }
         }
 
+
+        /// <summary>
+        /// Returns the configured application authenticator
+        /// </summary>
+        private static IApplicationAuthenticator ApplicationAuthenticator
+        {
+            get { return Configuration != null ? Configuration.ApplicationAuthenticator : null; }
+        }
+
+        /// <summary>
+        /// Facebook client service
+        /// </summary>
+        public static FacebookClientService FacebookClientService { get; private set; }
+
+        
+        public static FacebookOAuthService FacebookOAuthService { get; private set; }
+
+        /// <summary>
+        /// Enable facebook authentication for the application
+        /// </summary>
+        /// <param name="configuration">
+        /// The facebook authentication configuration
+        /// </param>
         public static void Enable(FacebookAuthenticationConfiguration configuration)
         {
+            Enable(configuration, new FacebookSDKObjectBuilder(), new FacebookUrlHelper(configuration));
+        }
+
+        /// <summary>
+        /// Enable facebook authentication for the application
+        /// </summary>
+        /// <param name="configuration">
+        /// The facebook authentication configuration
+        /// </param>
+        /// <param name="facebookSdkObjectBuilder">
+        /// The facebook object builder
+        /// </param>
+        /// <param name="facebookUrlHelper">
+        /// The facebook url helper
+        /// </param>
+        public static void Enable(FacebookAuthenticationConfiguration configuration, IFacebookSDKObjectBuilder facebookSdkObjectBuilder, IFacebookUrlHelper facebookUrlHelper)
+        {
+
             if (configuration == null)
             {
                 throw new ArgumentNullException("configuration");
@@ -27,152 +76,115 @@ namespace Nancy.Authentication.Facebook
 
             if (!configuration.IsValid)
             {
-
                 throw new ArgumentException("Configuration is invalid", "configuration");
+            }
+
+
+            if (facebookSdkObjectBuilder == null)
+            {
+                throw new ArgumentNullException("facebookSdkObjectBuilder");
+            }
+
+            if (facebookUrlHelper == null)
+            {
+                throw new ArgumentNullException("facebookUrlHelper");
             }
 
             Enabled = true;
             Configuration = configuration;
-        }
-
-        public static FacebookOAuthClient GetFacebookOAuthClient()
-        {
-            var oAuthClient = new FacebookOAuthClient(FacebookApplication.Current);
-            oAuthClient.RedirectUri = new Uri(Configuration.GetOathAbsoluteUrl());
-            return oAuthClient;
-        }
-
-        /// <summary>
-        /// Uses the configured application authenticator to login and redirect
-        /// </summary>
-        public static Response LoginAndRedirect(NancyContext context, long facebookId)
-        {
-            return Configuration.ApplicationAuthenticator.UserLoggedInRedirectResponse(context, facebookId);
-        }
-
-        public static Response LogoutAndRedirect(NancyContext context, string path)
-        {
-            var facebookId = GetFacebookIdFromContext(context);
-
-            if (facebookId.HasValue)
-            {
-                var accessToken = FacebookUserCache.GetAccessToken(facebookId.Value);
-                //This method of login out comes from http://forum.developers.facebook.net/viewtopic.php?id=87109 it seems to be an issue with login out.
-                return context.GetRedirect(Configuration.GetFacebookLogoutUrl(path, accessToken));
-            }
-
-            return null;
-        }
-
-        public static long? GetFacebookIdFromContext(NancyContext context)
-        {
-            if (AuthenticatedUserNameHasValue(context))
-            {
-                return long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
-            }
-            return null;
-        }
-
-        public static bool IsOAthResultSuccess(NancyContext context)
-        {
-            FacebookOAuthResult oauthResult;
-            var stringUri = Configuration.GetRequestAbsoluteUrl(context);
-            if (FacebookOAuthResult.TryParse(stringUri, out oauthResult))
-            {
-                if (oauthResult.IsSuccess)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static string GetAccessToken(string code)
-        {
-            var oAuthClient = GetFacebookOAuthClient();
-            dynamic tokenResult = oAuthClient.ExchangeCodeForAccessToken(code);
-            return tokenResult.access_token;
-        }
-
-        //hmmm 2 functions? return the facebookId and add to cache..
-        /// <summary>
-        /// Retrieves and adds an authenticated user to the cache, using the authorisation code provided by facebook
-        /// </summary>
-        /// <param name="code">Authorisation code provided by facebook</param>
-        /// <returns>The facebook id of the user</returns>
-        public static long RetrieveAndAddAuthenticatedUserToCache(string code)
-        {
-            string accessToken = GetAccessToken(code);
-            var facebookClient = new FacebookClient(accessToken);
-            dynamic me = facebookClient.Get("me");
-            long facebookId = Convert.ToInt64(me.id);
-            FacebookUserCache.AddUserToCache(facebookId, accessToken, (string)me.name);
-            return facebookId;
+            FacebookClientService = new FacebookClientService(ApplicationAuthenticator, FacebookCurrentAuthenticatedUserCache, facebookSdkObjectBuilder);
+            FacebookOAuthService = new FacebookOAuthService(facebookSdkObjectBuilder, facebookUrlHelper);
+            
         }
 
         public static Response RedirectToFacebookLoginUrl(NancyContext context)
         {
-            //All the login parameters should be configurable
-            var loginParameters = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(Configuration.ExtendedPermissions))
+            //TODO: The login parameters should be configurable
+            //TODO: Extract the redirect url (from the application authenticator) and pass it as a parameter
+            return context.GetRedirect(FacebookOAuthService.GetAbsoluteLoginUrl(Configuration.FacebookExtendedPermissions));
+        }
+
+        public static Response LoginIntoApplicationWithFacebookOAthResponse(NancyContext context, string pathToRedirectOnAutheticationFailure)
+        {
+            string code = context.Request.Query.code;
+            if (FacebookOAuthService.IsOAthResultSuccess(context))
             {
-                loginParameters["scope"] = Configuration.ExtendedPermissions;
+                var accessToken = FacebookOAuthService.GetAccessToken(code);
+                var me = FacebookClientService.GetFacebookMe(accessToken);
+                AddAuthenticatedUserToCache(me, accessToken);
+                var facebookId = Convert.ToInt64(me.id);
+                return LoginIntoTheApplicationAndRedirect(context, facebookId);
             }
 
-            return context.GetRedirect(GetFacebookOAuthClient().GetLoginUrl(loginParameters).AbsoluteUri);
+            return context.GetRedirect(pathToRedirectOnAutheticationFailure);
         }
 
-        public static Response CheckUserIsNothAuthorisedByFacebookAnymore(NancyContext context)
+        /// <summary>
+        /// Logs and redirects the facebook user into the application using the configured application authenticator (this is done normally after the success oAth from facebook)
+        /// </summary>
+        public static Response LoginIntoTheApplicationAndRedirect(NancyContext context, long facebookId)
         {
-            if (Enabled)
-            {
-                var facebookId = GetFacebookIdFromContext(context);
-               
-                try
-                {
-                    if (facebookId != null)
-                    {
-                        var client = GetFacebookClient(context);
-                        dynamic me = client.Get("me");
-                    }
-
-                }
-                catch (FacebookOAuthException)
-                {
-                    //If an exception gets thrown the access token is no longer valid
-                    RemoveUserFromCache(context, facebookId);
-                    return context.GetRedirect(Configuration.LoginPath);
-                }
-            }
-            return context.Response;
-
+            return ApplicationAuthenticator.UserLoggedInRedirectResponse(context, facebookId);
         }
 
-        private static void RemoveUserFromCache(NancyContext context, long? facebookId)
+        /// <summary>
+        /// Logs out the user from facebook and redirects to a given path (this will be normally the application logout path to complete the full logout)
+        /// </summary>
+        public static Response LogoutFromFacebookAndRedirect(NancyContext context, string path)
         {
-            context.Items[SecurityConventions.AuthenticatedUsernameKey] = null;
-            if (facebookId.HasValue) FacebookUserCache.RemoveUserFromCache(facebookId.Value);
-        }
+            var facebookId = ApplicationAuthenticator.GetFacebookId(context);
 
-        private static bool AuthenticatedUserNameHasValue(NancyContext context)
-        {
-            return context.Items.ContainsKey(SecurityConventions.AuthenticatedUsernameKey) && context.Items[SecurityConventions.AuthenticatedUsernameKey] != null && context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString() != String.Empty;
-        }
-
-        public static FacebookClient GetFacebookClient(NancyContext context)
-        {
-            var facebookId = GetFacebookIdFromContext(context);
-            return GetFacebookClient(facebookId);
-        }
-
-        public static FacebookClient GetFacebookClient(long? facebookId)
-        {
             if (facebookId.HasValue)
             {
-                return new FacebookClient(FacebookUserCache.GetAccessToken(facebookId.Value));
+                var accessToken = FacebookCurrentAuthenticatedUserCache.GetAccessToken(facebookId.Value);
+
+                return context.GetRedirect(FacebookOAuthService.GetFacebookLogoutUrl(path, accessToken));
             }
 
             return null;
         }
+
+
+        public static Response RedirectToFacebookLoginAndResetAuthenticationWhenNotAuthenticatedByFacebook(NancyContext context)
+        {
+            if (Enabled && !IsAuthenticatedByFacebook(context))
+            {
+
+                RemoveUserFromCache(context);
+                ApplicationAuthenticator.SetAsNotAuthenticated(context);
+                return context.GetRedirect(Configuration.FacebookLoginPath);
+
+            }
+            return context.Response;
+
+        }
+       
+
+        public static bool IsAuthenticatedByFacebook(NancyContext context)
+        {
+            try
+            {
+                var me = FacebookClientService.GetFacebookMe(context);
+                return true;
+            }
+            catch (FacebookOAuthException)
+            {
+                return false;
+            }
+        }
+
+        public static void AddAuthenticatedUserToCache(dynamic facebookMe, string accessToken)
+        {
+            long facebookId = Convert.ToInt64(facebookMe.id);
+            FacebookCurrentAuthenticatedUserCache.AddUserToCache(facebookId, accessToken, (string)facebookMe.name);
+        }
+
+
+        private static void RemoveUserFromCache(NancyContext context)
+        {
+            var facebookId = ApplicationAuthenticator.GetFacebookId(context);
+            if (facebookId.HasValue) FacebookCurrentAuthenticatedUserCache.RemoveUserFromCache(facebookId.Value);
+        }
+
     }
 }

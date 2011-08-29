@@ -9,7 +9,7 @@ using Nancy.Authentication.Facebook.Repository;
 
 namespace Nancy.Demo.Authentication.Facebook
 {
-    public class InMemoryUserCache : IFacebookUserCache
+    public class InMemoryCurrentAuthenticatedUserCache : IFacebookCurrentAuthenticatedUserCache
     {
         static readonly IDictionary<long, FacebookUser> users = new ConcurrentDictionary<long, FacebookUser>();
 

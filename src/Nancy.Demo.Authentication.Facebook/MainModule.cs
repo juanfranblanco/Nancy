@@ -17,14 +17,13 @@ namespace Nancy.Demo.Authentication.Facebook
 
             Get["/"] = parameters =>
                            {
-                               var client = FacebookAuthentication.GetFacebookClient(Context);
-                               dynamic me = client.Get("me");
+                               var me = FacebookAuthentication.FacebookClientService.GetFacebookMe(Context);
                                return View["index", me];
                            };
 
             Post["/"] = x =>
                             {
-                                var client = FacebookAuthentication.GetFacebookClient(Context);
+                                var client = FacebookAuthentication.FacebookClientService.GetFacebookClient(Context);
                                 dynamic parameters = new ExpandoObject();
                                 parameters.message = (string)this.Request.Form.Message;
                                 client.Post("me/feed", parameters);

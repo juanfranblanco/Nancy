@@ -2,7 +2,7 @@
 
 namespace Nancy.Authentication.Facebook.Repository
 {
-    public interface IFacebookUserCache
+    public interface IFacebookCurrentAuthenticatedUserCache
     {
         void AddUserToCache(long facebookId, string accessToken, string name);
         long? GetFacebookId(Guid userId);
