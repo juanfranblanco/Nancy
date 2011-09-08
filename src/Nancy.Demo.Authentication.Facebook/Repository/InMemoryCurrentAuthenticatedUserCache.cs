@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Nancy.Authentication.Facebook.FormsApplicationAuthentication;
 using Nancy.Authentication.Facebook.Model;
 using Nancy.Authentication.Facebook.Modules;
 using Nancy.Authentication.Facebook.Repository;
@@ -15,7 +16,7 @@ namespace Nancy.Demo.Authentication.Facebook
 
         public void AddUserToCache(FacebookUser user)
         {
-            users[user.FacebookId] = user;
+            users[user.FacebookUserId] = user;
         }
 
         public void AddUserToCache(long facebookId, string accessToken, string name)
@@ -23,24 +24,30 @@ namespace Nancy.Demo.Authentication.Facebook
             AddUserToCache(new FacebookUser
             {
                 AccessToken = accessToken,
-                FacebookId = facebookId,
-                Name = name
+                FacebookUserId = facebookId,
+                UserName = name
             });
         }
 
         public long? GetFacebookId(Guid userId)
         {
-            var usersFound = users.Where(x => x.Value.UserId == userId);
-            if (usersFound.Count() > 0)
-            {
-                return usersFound.First().Value.FacebookId;
-            }
-            return null;
+            var user = GetUser(userId);
+            return user == null ? (long?) null : user.FacebookUserId;
         }
 
         public string GetAccessToken(long facebookId)
         {
             return GetUser(facebookId).AccessToken;
+        }
+
+        public IFacebookUserIdentity GetUser(Guid userId)
+        {
+            var usersFound = users.Where(x => x.Value.UserId == userId);
+            if (usersFound.Count() > 0)
+            {
+                return usersFound.First().Value;
+            }
+            return null;
         }
 
         public FacebookUser GetUser(long facebookId)

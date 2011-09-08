@@ -20,25 +20,27 @@ namespace Nancy.Authentication.Facebook.FormsApplicationAuthentication
 
         public virtual bool AuthenticatedUserNameHasValue(NancyContext context)
         {
-            return context.Items.ContainsKey(SecurityConventions.AuthenticatedUsernameKey) && context.Items[SecurityConventions.AuthenticatedUsernameKey] != null && context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString() != String.Empty;
+            return context.CurrentUser != null && !String.IsNullOrWhiteSpace(context.CurrentUser.UserName);
         }
 
         public virtual long? GetFacebookId(NancyContext context)
         {
-            if (AuthenticatedUserNameHasValue(context))
+            if (IsAuthenticatedIntoTheApplication(context))
             {
-                return long.Parse(context.Items[SecurityConventions.AuthenticatedUsernameKey].ToString());
+                if (context.CurrentUser is IFacebookUserIdentity)
+                {
+                    return ((IFacebookUserIdentity) context.CurrentUser).FacebookUserId;
+                }
             }
             return null;
         }
 
         public virtual void SetAsNotAuthenticated(NancyContext context)
         {
-            context.Items[SecurityConventions.AuthenticatedUsernameKey] = null;
+            context.CurrentUser = null;
         }
 
         public abstract Guid GetUserUniqueIdentifier(long facebookId);
-
 
     }
 }

@@ -29,7 +29,7 @@ namespace Nancy.Demo.Authentication.Facebook
                 new FormsAuthenticationConfiguration()
                     {
                         RedirectUrl = facebookAuthConfiguration.FacebookLoginPath,
-                        UsernameMapper = container.Resolve<IUsernameMapper>(),
+                        UserMapper = container.Resolve<IUserMapper>(),
                     };
 
             FormsAuthentication.Enable(this, formsAuthConfiguration);

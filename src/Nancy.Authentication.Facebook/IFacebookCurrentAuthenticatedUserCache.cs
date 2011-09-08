@@ -1,4 +1,6 @@
 ﻿using System;
+using Nancy.Authentication.Facebook.FormsApplicationAuthentication;
+using Nancy.Security;
 
 namespace Nancy.Authentication.Facebook.Repository
 {
@@ -8,5 +10,6 @@ namespace Nancy.Authentication.Facebook.Repository
         long? GetFacebookId(Guid userId);
         string GetAccessToken(long facebookId);
         void RemoveUserFromCache(long facebookId);
+        IFacebookUserIdentity GetUser(Guid identifier);
     }
 }
